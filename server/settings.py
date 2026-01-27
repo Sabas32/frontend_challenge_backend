@@ -34,6 +34,15 @@ def env_list(name: str, default: list[str]) -> list[str]:
     return [p for p in parts if p]
 
 
+def merge_unique(*lists: list[str]) -> list[str]:
+    merged: list[str] = []
+    for lst in lists:
+        for item in lst:
+            if item not in merged:
+                merged.append(item)
+    return merged
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -185,23 +194,16 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOWED_ORIGINS = env_list(
-    "CORS_ALLOWED_ORIGINS",
-    [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'https://frontend-ui-challenge-pi.vercel.app',
-    ],
-)
+default_frontend_origins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://frontend-ui-challenge-pi.vercel.app',
+]
+env_frontend_origins = env_list("CORS_ALLOWED_ORIGINS", [])
+CORS_ALLOWED_ORIGINS = merge_unique(default_frontend_origins, env_frontend_origins)
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = env_list(
-    "CSRF_TRUSTED_ORIGINS",
-    [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'https://frontend-ui-challenge-pi.vercel.app',
-    ],
-)
+env_csrf_trusted = env_list("CSRF_TRUSTED_ORIGINS", [])
+CSRF_TRUSTED_ORIGINS = merge_unique(default_frontend_origins, env_csrf_trusted)
 
 CHANNEL_LAYERS = {
     'default': {
@@ -218,3 +220,6 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    # Cross-site cookies are required for Vercel (frontend) -> Render (backend).
+    SESSION_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SAMESITE = "None"
