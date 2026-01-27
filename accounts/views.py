@@ -2,6 +2,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.sessions.models import Session
+from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -18,7 +19,10 @@ class CsrfView(APIView):
 
     @ensure_csrf_cookie
     def get(self, request):
-        return Response({"detail": "CSRF cookie set"})
+        # In cross-site deployments (Vercel -> Render), the frontend cannot
+        # read cookies for the backend domain. Return the token explicitly.
+        token = get_token(request)
+        return Response({"detail": "CSRF cookie set", "csrfToken": token})
 
 
 class LoginView(APIView):
