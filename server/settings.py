@@ -52,15 +52,18 @@ SECRET_KEY = os.environ.get(
     "django-insecure-e!mi&y1#$v*onls@lt8=0l^yep1!kt-@_(@!_ht#=ighw)wvf4",
 )
 
+# Render provides this automatically at runtime.
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool("DJANGO_DEBUG", True)
+default_debug = False if render_hostname else True
+DEBUG = env_bool("DJANGO_DEBUG", default_debug)
 
 default_allowed_hosts = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", default_allowed_hosts)
 
-# Render provides this automatically at runtime. Add it when present so that
-# Django accepts the incoming Host header.
-render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+# Add Render hostname when present so that Django accepts the incoming Host
+# header in production.
 if render_hostname and render_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_hostname)
 
