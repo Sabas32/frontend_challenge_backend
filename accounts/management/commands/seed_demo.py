@@ -42,6 +42,14 @@ class Command(BaseCommand):
                 "last_name": "User",
                 "school": "Riverside Tech College",
             },
+            {
+                "username": "viewer",
+                "password": "viewer123",
+                "role": "viewer",
+                "first_name": "Leaderboard",
+                "last_name": "Viewer",
+                "school": "Guest",
+            },
         ]
 
         for payload in users:
