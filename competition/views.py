@@ -19,7 +19,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [permissions.IsAuthenticated(), IsAdminRole()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -38,7 +38,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     queryset = Submission.objects.select_related("user", "challenge").all()
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve", "create"]:
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        if self.action in ["create"]:
             return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated(), IsAdminRole()]
 
@@ -50,10 +52,18 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             or self.request.query_params.get("submission_type")
         )
         user_param = self.request.query_params.get("user")
-        is_admin = getattr(self.request.user, "role", None) == "admin"
+        user = getattr(self.request, "user", None)
+        is_authenticated = bool(user and user.is_authenticated)
+        is_admin = getattr(user, "role", None) == "admin"
 
-        if not is_admin:
-            queryset = queryset.filter(user=self.request.user)
+        if not is_authenticated:
+            # Public access: only expose final submissions when explicitly asked.
+            if submission_type == "final":
+                queryset = queryset.filter(submission_type="final")
+            else:
+                return queryset.none()
+        elif not is_admin:
+            queryset = queryset.filter(user=user)
 
         if challenge_id:
             queryset = queryset.filter(challenge_id=challenge_id)
@@ -110,7 +120,7 @@ class LeaderboardEntryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
-            return [permissions.IsAuthenticated()]
+            return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsAdminRole()]
 
     def get_queryset(self):

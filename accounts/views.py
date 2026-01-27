@@ -106,11 +106,17 @@ class SystemStatusView(APIView):
 
 
 class LogoutView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         logout(request)
         return Response({"detail": "Logged out"})
 
 
 class MeView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"user": None})
         return Response({"user": UserSerializer(request.user).data})
