@@ -282,3 +282,16 @@ class MeView(APIView):
         if not request.user or not request.user.is_authenticated:
             return Response({"user": None})
         return Response({"user": UserSerializer(request.user).data})
+
+
+class UserListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        users = User.objects.all().order_by("date_joined")
+        return Response(UserSerializer(users, many=True).data)
