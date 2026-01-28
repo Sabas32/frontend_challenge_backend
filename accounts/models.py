@@ -5,7 +5,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     ROLE_CHOICES = [
         ("admin", "Admin"),
         ("competitor", "Competitor"),
