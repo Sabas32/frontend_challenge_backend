@@ -4,6 +4,20 @@ import uuid
 from django.db import migrations, models
 
 
+def populate_public_ids(apps, schema_editor):
+    User = apps.get_model("accounts", "User")
+    seen = set()
+    for user in User.objects.all().only("id", "public_id"):
+        value = user.public_id
+        if not value or value in seen:
+            value = uuid.uuid4()
+            while value in seen:
+                value = uuid.uuid4()
+            user.public_id = value
+            user.save(update_fields=["public_id"])
+        seen.add(value)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,6 +26,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
+            model_name="user",
+            name="public_id",
+            field=models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True),
+        ),
+        migrations.RunPython(populate_public_ids, migrations.RunPython.noop),
+        migrations.AlterField(
             model_name="user",
             name="public_id",
             field=models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
