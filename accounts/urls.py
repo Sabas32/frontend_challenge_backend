@@ -1,6 +1,14 @@
 from django.urls import path
 
-from .views import CsrfView, LoginView, LogoutView, MeView, SystemStatusView
+from .views import (
+    CsrfView,
+    LoginView,
+    LogoutView,
+    MeView,
+    SystemScheduleDetailView,
+    SystemScheduleListView,
+    SystemStatusView,
+)
 
 urlpatterns = [
     path("csrf/", CsrfView.as_view(), name="csrf"),
@@ -8,4 +16,10 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("me/", MeView.as_view(), name="me"),
     path("system-status/", SystemStatusView.as_view(), name="system-status"),
+    path("system-schedules/", SystemScheduleListView.as_view(), name="system-schedules"),
+    path(
+        "system-schedules/<int:schedule_id>/",
+        SystemScheduleDetailView.as_view(),
+        name="system-schedule-detail",
+    ),
 ]

@@ -2,6 +2,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from .models import SystemState
+from .services import apply_schedule_state, build_system_status_payload
 
 
 class SystemStatusConsumer(AsyncJsonWebsocketConsumer):
@@ -25,6 +26,5 @@ class SystemStatusConsumer(AsyncJsonWebsocketConsumer):
         state = SystemState.current()
         if not state:
             return {"allow_competitor_access": True}
-        return {
-            "allow_competitor_access": state.allow_competitor_access,
-        }
+        schedule_context = apply_schedule_state(state)
+        return build_system_status_payload(state, schedule_context)
