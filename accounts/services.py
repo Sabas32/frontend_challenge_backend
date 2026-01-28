@@ -9,29 +9,34 @@ def get_schedule_context(now=None):
         now = timezone.now()
     enabled = SystemSchedule.objects.filter(enabled=True)
     active = (
-        enabled.filter(close_at__lte=now, open_at__gt=now)
-        .order_by("open_at")
-        .first()
-    )
-    upcoming = (
-        enabled.filter(close_at__gt=now)
+        enabled.filter(open_at__lte=now, close_at__gt=now)
         .order_by("close_at")
         .first()
     )
-    return active, upcoming
+    upcoming = (
+        enabled.filter(open_at__gt=now)
+        .order_by("open_at")
+        .first()
+    )
+    return active, upcoming, enabled.exists()
 
 
 def apply_schedule_state(state):
     now = timezone.now()
-    active, upcoming = get_schedule_context(now=now)
+    active, upcoming, has_enabled = get_schedule_context(now=now)
     changed = False
     paused_now = False
     resumed_now = False
 
-    if active:
-        if state.allow_competitor_access or not state.scheduled_pause_active:
-            state.allow_competitor_access = False
-            state.scheduled_pause_active = True
+    if has_enabled:
+        should_allow = active is not None
+        should_pause = not should_allow
+        if (
+            state.allow_competitor_access != should_allow
+            or state.scheduled_pause_active != should_pause
+        ):
+            state.allow_competitor_access = should_allow
+            state.scheduled_pause_active = should_pause
             state.save(
                 update_fields=[
                     "allow_competitor_access",
@@ -40,24 +45,20 @@ def apply_schedule_state(state):
                 ]
             )
             changed = True
-            paused_now = True
+            if should_pause:
+                paused_now = True
+            else:
+                resumed_now = True
     else:
         if state.scheduled_pause_active:
-            state.allow_competitor_access = True
             state.scheduled_pause_active = False
-            state.save(
-                update_fields=[
-                    "allow_competitor_access",
-                    "scheduled_pause_active",
-                    "updated_at",
-                ]
-            )
+            state.save(update_fields=["scheduled_pause_active", "updated_at"])
             changed = True
-            resumed_now = True
 
     return {
         "active": active,
         "upcoming": upcoming,
+        "has_enabled": has_enabled,
         "changed": changed,
         "paused_now": paused_now,
         "resumed_now": resumed_now,
@@ -66,12 +67,16 @@ def apply_schedule_state(state):
 
 def build_system_status_payload(state, schedule_context=None):
     if schedule_context is None:
-        active, upcoming = get_schedule_context()
-        schedule_context = {"active": active, "upcoming": upcoming}
+        active, upcoming, has_enabled = get_schedule_context()
+        schedule_context = {
+            "active": active,
+            "upcoming": upcoming,
+            "has_enabled": has_enabled,
+        }
     active = schedule_context.get("active")
     upcoming = schedule_context.get("upcoming")
-    pause_until = upcoming.close_at if upcoming else None
-    resume_at = active.open_at if active else None
+    pause_until = active.close_at if active else None
+    resume_at = upcoming.open_at if upcoming else None
     schedules = SystemScheduleSerializer(
         SystemSchedule.objects.all(), many=True
     ).data

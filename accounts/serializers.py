@@ -62,9 +62,9 @@ class SystemScheduleSerializer(serializers.ModelSerializer):
         now = timezone.now()
         if not obj.enabled:
             return "disabled"
-        if obj.close_at <= now < obj.open_at:
+        if obj.open_at <= now < obj.close_at:
             return "active"
-        if obj.close_at > now:
+        if obj.open_at > now:
             return "upcoming"
         return "completed"
 
@@ -76,8 +76,8 @@ class SystemScheduleSerializer(serializers.ModelSerializer):
                 close_at = self.instance.close_at
             if open_at is None:
                 open_at = self.instance.open_at
-        if close_at and open_at and open_at <= close_at:
+        if close_at and open_at and close_at <= open_at:
             raise serializers.ValidationError(
-                {"open_at": "Open time must be after the close time."}
+                {"close_at": "Close time must be after the open time."}
             )
         return data
