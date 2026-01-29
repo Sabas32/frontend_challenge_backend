@@ -30,13 +30,13 @@ class Command(BaseCommand):
     <button>Profile</button>
   </div>
 </nav>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;color:#f8fafc;}
 .nav{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:#17102b;border-bottom:1px solid rgba(148,163,184,0.12);}
 .logo{font-weight:700;letter-spacing:0.2em;color:#c4b5fd;}
 .links{display:flex;gap:18px;}
 .links a{color:#cbd5f5;text-decoration:none;font-size:14px;}
 .actions{display:flex;gap:10px;align-items:center;}
-input{background:#0f0b1d;border:1px solid rgba(148,163,184,0.3);padding:8px 12px;border-radius:10px;color:#e2e8f0;}
+input{background:transparent;border:1px solid rgba(148,163,184,0.3);padding:8px 12px;border-radius:10px;color:#e2e8f0;}
 button{background:#8b5cf6;border:none;padding:8px 14px;border-radius:10px;color:white;font-weight:600;}""",
                 "target_js": "",
             },
@@ -52,17 +52,17 @@ button{background:#8b5cf6;border:none;padding:8px 14px;border-radius:10px;color:
   <label>Email</label>
   <input type="email" placeholder="you@example.com"/>
   <label>Password</label>
-  <input type="password" placeholder="••••••••"/>
+  <input type="password" placeholder="********"/>
   <div class="row">
     <label class="check"><input type="checkbox"/>Remember me</label>
     <a href="#">Forgot password?</a>
   </div>
   <button>Sign in</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .card{width:360px;background:#1b1333;padding:28px;border-radius:18px;box-shadow:0 18px 40px rgba(15,23,42,0.35);}
 label{font-size:12px;color:#94a3b8;}
-input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:#0f0b1d;color:#e2e8f0;}
+input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;}
 .row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#94a3b8;}
 .row a{color:#c4b5fd;text-decoration:none;}
 button{margin-top:16px;width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6;color:white;font-weight:600;}""",
@@ -84,7 +84,7 @@ button{margin-top:16px;width:100%;padding:10px;border-radius:12px;border:none;ba
   </div>
   <button>Start challenge</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .challenge{width:360px;background:#1b1333;padding:24px;border-radius:18px;}
 .pill{display:inline-flex;padding:6px 12px;border-radius:999px;background:rgba(34,197,94,0.2);color:#86efac;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;}
 .meta{display:flex;justify-content:space-between;color:#94a3b8;font-size:12px;margin:12px 0;}
@@ -105,7 +105,7 @@ button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6
     <span>#1</span><span>Ivan Kato</span><span>SMASK</span><span>98</span>
   </div>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;}
 .table{width:520px;background:#1b1333;border-radius:16px;padding:16px;}
 .header,.row{display:grid;grid-template-columns:80px 1.2fr 1fr 80px;gap:8px;padding:10px 12px;}
 .header{color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.2em;border-bottom:1px solid rgba(148,163,184,0.2);}
@@ -126,9 +126,9 @@ button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6
   <textarea rows="4" placeholder="Describe your approach..."></textarea>
   <button>Submit</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .panel{width:420px;background:#1b1333;padding:24px;border-radius:18px;}
-input,textarea{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:#0f0b1d;color:#e2e8f0;}
+input,textarea{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;}
 button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6;color:white;font-weight:600;}""",
                 "target_js": "",
             },
@@ -143,7 +143,7 @@ button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6
   <div class="stat"><span>Submissions</span><strong>248</strong></div>
   <div class="stat"><span>Avg Score</span><strong>87%</strong></div>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .stat{background:#1b1333;padding:16px;border-radius:16px;min-width:160px;}
 span{font-size:12px;color:#94a3b8;}
@@ -167,7 +167,7 @@ strong{display:block;margin-top:6px;font-size:22px;}""",
   </nav>
   <button>Logout</button>
 </aside>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;color:#f8fafc;}
 .sidebar{height:100vh;width:220px;background:#1b1333;padding:24px;display:flex;flex-direction:column;gap:18px;}
 .logo{font-weight:700;letter-spacing:0.2em;}
 nav{display:flex;flex-direction:column;gap:10px;}
@@ -188,10 +188,10 @@ button{margin-top:auto;padding:10px;border-radius:12px;border:none;background:#8
     <select><option>All levels</option></select>
   </div>
 </header>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;color:#f8fafc;padding:24px;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;color:#f8fafc;padding:24px;}
 .header{display:flex;align-items:center;justify-content:space-between;background:#1b1333;padding:16px;border-radius:16px;}
 .controls{display:flex;gap:10px;}
-input,select{background:#0f0b1d;border:1px solid rgba(148,163,184,0.3);padding:8px 12px;border-radius:10px;color:#e2e8f0;}""",
+input,select{background:transparent;border:1px solid rgba(148,163,184,0.3);padding:8px 12px;border-radius:10px;color:#e2e8f0;}""",
                 "target_js": "",
             },
             {
@@ -208,9 +208,9 @@ input,select{background:#0f0b1d;border:1px solid rgba(148,163,184,0.3);padding:8
   <input type="text" placeholder="Makerere Hill School"/>
   <button>Save changes</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .panel{width:420px;background:#1b1333;padding:24px;border-radius:18px;}
-input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:#0f0b1d;color:#e2e8f0;}
+input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;}
 button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6;color:white;font-weight:600;}""",
                 "target_js": "",
             },
@@ -228,10 +228,10 @@ button{width:100%;padding:10px;border-radius:12px;border:none;background:#8b5cf6
   <input placeholder="Kololo Hill"/>
   <button>Confirm ride</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .panel{width:360px;background:#1b1333;padding:24px;border-radius:18px;}
-input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:#0f0b1d;color:#e2e8f0;}
-button{width:100%;padding:10px;border-radius:12px;border:none;background:#22c55e;color:white;font-weight:600;}""",
+input{width:100%;margin:8px 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;}
+button{width:100%;padding:10px;border-radius:12px;border:none;background:#f58220;color:white;font-weight:600;}""",
                 "target_js": "",
             },
             {
@@ -245,9 +245,9 @@ button{width:100%;padding:10px;border-radius:12px;border:none;background:#22c55e
   <h2>UGX 84,500</h2>
   <button>Top up</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .wallet{width:300px;background:#1b1333;padding:20px;border-radius:18px;text-align:center;}
-button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#22c55e;color:white;font-weight:600;}""",
+button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#f58220;color:white;font-weight:600;}""",
                 "target_js": "",
             },
             {
@@ -263,10 +263,10 @@ button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;ba
   <div class="row"><span>Fare</span><strong>UGX 8,000</strong></div>
   <button>Pay driver</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .trip{width:360px;background:#1b1333;padding:22px;border-radius:18px;}
 .row{display:flex;justify-content:space-between;color:#cbd5f5;margin:8px 0;}
-button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#22c55e;color:white;font-weight:600;}""",
+button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#f58220;color:white;font-weight:600;}""",
                 "target_js": "",
             },
             {
@@ -279,14 +279,14 @@ button{margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;ba
   <div class="avatar">DK</div>
   <div>
     <h3>Denis Kato</h3>
-    <p>Rating 4.9 · 1,024 trips</p>
+    <p>Rating 4.9 - 1,024 trips</p>
   </div>
   <button>Call</button>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .driver{width:420px;background:#1b1333;padding:18px;border-radius:18px;display:flex;gap:14px;align-items:center;}
-.avatar{width:44px;height:44px;border-radius:12px;background:#22c55e;display:grid;place-items:center;font-weight:700;}
-button{margin-left:auto;padding:8px 14px;border-radius:10px;border:none;background:#22c55e;color:white;font-weight:600;}""",
+.avatar{width:44px;height:44px;border-radius:12px;background:#f58220;display:grid;place-items:center;font-weight:700;}
+button{margin-left:auto;padding:8px 14px;border-radius:10px;border:none;background:#f58220;color:white;font-weight:600;}""",
                 "target_js": "",
             },
             {
@@ -300,7 +300,7 @@ button{margin-left:auto;padding:8px 14px;border-radius:10px;border:none;backgrou
   <div><span>This week</span><strong>UGX 280,000</strong></div>
   <div><span>This month</span><strong>UGX 1.2M</strong></div>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .earnings{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:#1b1333;padding:18px;border-radius:18px;}
 span{display:block;color:#94a3b8;font-size:12px;}
 strong{display:block;margin-top:6px;font-size:18px;}""",
@@ -320,13 +320,13 @@ strong{display:block;margin-top:6px;font-size:18px;}""",
     <button>Send</button>
   </div>
 </div>""",
-                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:#0f0b1d;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
+                "target_css": """body{margin:0;font-family:Inter,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;color:#f8fafc;}
 .chat{width:360px;background:#1b1333;padding:18px;border-radius:18px;display:flex;flex-direction:column;gap:10px;}
 .bubble{background:#2a1d4a;padding:10px;border-radius:12px;max-width:80%;}
-.bubble.user{align-self:flex-end;background:#22c55e;color:#0f0b1d;}
+.bubble.user{align-self:flex-end;background:#f58220;color:#0f0b1d;}
 .input{display:flex;gap:8px;margin-top:10px;}
-input{flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(148,163,184,0.3);background:#0f0b1d;color:#e2e8f0;}
-button{padding:8px 12px;border-radius:10px;border:none;background:#22c55e;color:white;font-weight:600;}""",
+input{flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;}
+button{padding:8px 12px;border-radius:10px;border:none;background:#f58220;color:white;font-weight:600;}""",
                 "target_js": "",
             },
         ]
@@ -334,3 +334,5 @@ button{padding:8px 12px;border-radius:10px;border:none;background:#22c55e;color:
         for payload in challenges:
             challenge = Challenge.objects.create(**payload)
             self.stdout.write(self.style.SUCCESS(f"Created {challenge.title}"))
+
+
