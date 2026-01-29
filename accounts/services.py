@@ -7,6 +7,8 @@ from .serializers import SystemScheduleSerializer
 def get_schedule_context(now=None):
     if now is None:
         now = timezone.now()
+    # Auto-cleanup schedules that already finished.
+    SystemSchedule.objects.filter(close_at__lte=now).delete()
     enabled = SystemSchedule.objects.filter(enabled=True)
     active = (
         enabled.filter(open_at__lte=now, close_at__gt=now)
