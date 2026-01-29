@@ -9,6 +9,7 @@ from .views import (
     SystemScheduleListView,
     SystemStatusView,
     UserListView,
+    OnlineUsersView,
 )
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("me/", MeView.as_view(), name="me"),
     path("system-status/", SystemStatusView.as_view(), name="system-status"),
     path("users/", UserListView.as_view(), name="users"),
+    path("online-users/", OnlineUsersView.as_view(), name="online-users"),
     path("system-schedules/", SystemScheduleListView.as_view(), name="system-schedules"),
     path(
         "system-schedules/<int:schedule_id>/",
