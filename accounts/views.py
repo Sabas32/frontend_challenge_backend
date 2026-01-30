@@ -23,6 +23,8 @@ User = get_user_model()
 
 
 def _get_online_users_queryset():
+    # Cleanup expired sessions first so users drop off instantly.
+    Session.objects.filter(expire_date__lte=timezone.now()).delete()
     active_sessions = Session.objects.filter(expire_date__gt=timezone.now())
     user_ids = set()
     for session in active_sessions:
