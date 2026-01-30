@@ -3,7 +3,6 @@ from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.sessions.models import Session
 from django.middleware.csrf import get_token
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
@@ -20,30 +19,6 @@ from .serializers import (
 from .services import apply_schedule_state, build_system_status_payload
 
 User = get_user_model()
-
-
-def _get_online_users_queryset():
-    # Cleanup expired sessions first so users drop off instantly.
-    Session.objects.filter(expire_date__lte=timezone.now()).delete()
-    active_sessions = Session.objects.filter(expire_date__gt=timezone.now())
-    user_ids = set()
-    for session in active_sessions:
-        data = session.get_decoded()
-        user_id = data.get("_auth_user_id")
-        if user_id:
-            user_ids.add(user_id)
-    return User.objects.filter(pk__in=user_ids).order_by("username")
-
-
-def broadcast_online_users():
-    channel_layer = get_channel_layer()
-    if not channel_layer:
-        return
-    users = _get_online_users_queryset()
-    payload = UserSerializer(users, many=True).data
-    async_to_sync(channel_layer.group_send)(
-        "online_users", {"type": "online_users_update", "payload": payload}
-    )
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -307,21 +282,6 @@ class MeView(APIView):
         if not request.user or not request.user.is_authenticated:
             return Response({"user": None})
         return Response({"user": UserSerializer(request.user).data})
-
-
-
-
-class OnlineUsersView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        if not request.user.is_authenticated or request.user.role != "admin":
-            return Response(
-                {"detail": "Admin access required."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        users = _get_online_users_queryset()
-        return Response(UserSerializer(users, many=True).data)
 class UserListView(APIView):
     permission_classes = [permissions.AllowAny]
 
