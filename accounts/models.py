@@ -1,7 +1,9 @@
+from datetime import timedelta
 import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -47,3 +49,49 @@ class SystemSchedule(models.Model):
     def __str__(self) -> str:
         label = self.name or "Scheduled window"
         return f"{label} ({self.close_at} -> {self.open_at})"
+
+
+class RegistrationCode(models.Model):
+    code = models.CharField(max_length=16, unique=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_registration_codes",
+    )
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    consumed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consumed_registration_codes",
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.status})"
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() >= self.expires_at
+
+    @property
+    def status(self) -> str:
+        if not self.is_active:
+            return "revoked"
+        if self.consumed_at:
+            return "used"
+        if self.is_expired:
+            return "expired"
+        return "active"
+
+    @classmethod
+    def default_expiry(cls):
+        return timezone.now() + timedelta(minutes=20)

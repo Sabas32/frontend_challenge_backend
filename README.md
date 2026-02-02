@@ -1,4 +1,4 @@
-﻿# Django Backend
+# Django Backend
 
 ## Setup
 
@@ -19,6 +19,10 @@ python manage.py runserver
 
 - `GET /api/auth/csrf/` - set CSRF cookie
 - `POST /api/auth/login/` - login with session cookie
+- `POST /api/auth/register/` - register student competitor account (requires one-time invite code)
+- `GET /api/auth/registration-codes/` - list latest invite codes (admin)
+- `POST /api/auth/registration-codes/` - create invite code (admin, expires in 20 minutes)
+- `DELETE /api/auth/registration-codes/<id>/` - revoke invite code (admin)
 - `POST /api/auth/logout/` - logout
 - `GET /api/auth/me/` - current user
 - `GET /api/auth/system-status/` - current access state
@@ -41,3 +45,4 @@ python manage.py runserver
 - `ws://localhost:8000/ws/submissions/`
 - `ws://localhost:8000/ws/challenges/stream/`
 - `ws://localhost:8000/ws/system-status/`
+

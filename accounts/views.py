@@ -1,17 +1,23 @@
+import secrets
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.sessions.models import Session
+from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import SystemSchedule, SystemState
+from .models import RegistrationCode, SystemSchedule, SystemState
 from .serializers import (
     LoginSerializer,
+    RegisterSerializer,
+    RegistrationCodeSerializer,
     SystemScheduleSerializer,
     SystemStatusSerializer,
     UserSerializer,
@@ -19,6 +25,15 @@ from .serializers import (
 from .services import apply_schedule_state, build_system_status_payload
 
 User = get_user_model()
+CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def generate_registration_code(length=8):
+    for _ in range(10):
+        code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(length))
+        if not RegistrationCode.objects.filter(code=code).exists():
+            return code
+    raise RuntimeError("Could not generate a unique registration code.")
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -87,6 +102,148 @@ class LoginView(APIView):
                 "payload": payload,
             },
         )
+
+
+class RegisterView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        state = SystemState.current()
+        schedule_context = apply_schedule_state(state)
+        if schedule_context.get("paused_now"):
+            self._logout_competitors()
+            self._notify_system_status(state, schedule_context)
+
+        if not state.allow_competitor_access:
+            return Response(
+                {"detail": "Competitor registration is currently disabled."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        invite_code_value = serializer.validated_data.get("invite_code")
+        invite = RegistrationCode.objects.filter(
+            code=invite_code_value,
+            is_active=True,
+        ).first()
+        if not invite:
+            return Response(
+                {"detail": "Invalid invitation code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if invite.consumed_at is not None:
+            return Response(
+                {"detail": "This invitation code has already been used."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timezone.now() >= invite.expires_at:
+            invite.is_active = False
+            invite.save(update_fields=["is_active"])
+            return Response(
+                {"detail": "This invitation code has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            with transaction.atomic():
+                user = serializer.save(role="competitor")
+                invite.consumed_at = timezone.now()
+                invite.consumed_by = user
+                invite.is_active = False
+                invite.save(
+                    update_fields=["consumed_at", "consumed_by", "is_active"]
+                )
+        except IntegrityError:
+            return Response(
+                {"detail": "Username is already taken."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "detail": "Account created successfully.",
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def _logout_competitors(self):
+        for session in Session.objects.all():
+            data = session.get_decoded()
+            user_id = data.get("_auth_user_id")
+            if not user_id:
+                continue
+            user = User.objects.filter(pk=user_id).first()
+            if user and user.role == "competitor":
+                session.delete()
+
+    def _notify_system_status(self, state, schedule_context=None):
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            return
+        payload = build_system_status_payload(state, schedule_context)
+        async_to_sync(channel_layer.group_send)(
+            "system_status",
+            {
+                "type": "system_status_update",
+                "payload": payload,
+            },
+        )
+
+
+class RegistrationCodeListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        codes = RegistrationCode.objects.all()[:30]
+        return Response(RegistrationCodeSerializer(codes, many=True).data)
+
+    def post(self, request):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        code = generate_registration_code()
+        invite = RegistrationCode.objects.create(
+            code=code,
+            created_by=request.user,
+            expires_at=RegistrationCode.default_expiry(),
+            is_active=True,
+        )
+        return Response(RegistrationCodeSerializer(invite).data, status=201)
+
+
+class RegistrationCodeDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request, code_id):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        code = RegistrationCode.objects.filter(pk=code_id).first()
+        if not code:
+            return Response(
+                {"detail": "Code not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        code.is_active = False
+        code.save(update_fields=["is_active"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SystemStatusView(APIView):
