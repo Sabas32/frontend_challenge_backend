@@ -46,3 +46,9 @@ python manage.py runserver
 - `ws://localhost:8000/ws/challenges/stream/`
 - `ws://localhost:8000/ws/system-status/`
 
+
+## Environment Flags
+
+- ENABLE_INVITE_REGISTRATION=false (recommended in production unless needed).
+- When disabled, /api/auth/register/ and /api/auth/registration-codes/* return 404.
+

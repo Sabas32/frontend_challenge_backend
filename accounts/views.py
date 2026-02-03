@@ -2,6 +2,7 @@ import secrets
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.sessions.models import Session
 from django.db import IntegrityError, transaction
@@ -16,8 +17,8 @@ from rest_framework.views import APIView
 from .models import RegistrationCode, SystemSchedule, SystemState
 from .serializers import (
     LoginSerializer,
-    RegisterSerializer,
     RegistrationCodeSerializer,
+    RegisterSerializer,
     SystemScheduleSerializer,
     SystemStatusSerializer,
     UserSerializer,
@@ -36,50 +37,7 @@ def generate_registration_code(length=8):
     raise RuntimeError("Could not generate a unique registration code.")
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
-class CsrfView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        # In cross-site deployments (Vercel -> Render), the frontend cannot
-        # read cookies for the backend domain. Return the token explicitly.
-        token = get_token(request)
-        return Response({"detail": "CSRF cookie set", "csrfToken": token})
-
-
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        state = SystemState.current()
-        schedule_context = apply_schedule_state(state)
-        if schedule_context.get("paused_now"):
-            self._logout_competitors()
-            self._notify_system_status(state, schedule_context)
-        user = authenticate(
-            request,
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"],
-        )
-        if not user:
-            return Response(
-                {"detail": "Invalid username or password."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        system = SystemState.current()
-        if (
-            user.role == "competitor"
-            and not system.allow_competitor_access
-        ):
-            return Response(
-                {"detail": "Competitor access is currently disabled."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        login(request, user)
-        return Response({"user": UserSerializer(user).data})
-
+class CompetitorSessionMixin:
     def _logout_competitors(self):
         for session in Session.objects.all():
             data = session.get_decoded()
@@ -104,10 +62,56 @@ class LoginView(APIView):
         )
 
 
-class RegisterView(APIView):
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        token = get_token(request)
+        return Response({"detail": "CSRF cookie set", "csrfToken": token})
+
+
+class LoginView(CompetitorSessionMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        state = SystemState.current()
+        schedule_context = apply_schedule_state(state)
+        if schedule_context.get("paused_now"):
+            self._logout_competitors()
+            self._notify_system_status(state, schedule_context)
+
+        user = authenticate(
+            request,
+            username=serializer.validated_data["username"],
+            password=serializer.validated_data["password"],
+        )
+        if not user:
+            return Response(
+                {"detail": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if user.role == "competitor" and not state.allow_competitor_access:
+            return Response(
+                {"detail": "Competitor access is currently disabled."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        login(request, user)
+        return Response({"user": UserSerializer(user).data})
+
+
+class RegisterView(CompetitorSessionMixin, APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        if not settings.ENABLE_INVITE_REGISTRATION:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
         state = SystemState.current()
         schedule_context = apply_schedule_state(state)
         if schedule_context.get("paused_now"):
@@ -171,34 +175,13 @@ class RegisterView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-    def _logout_competitors(self):
-        for session in Session.objects.all():
-            data = session.get_decoded()
-            user_id = data.get("_auth_user_id")
-            if not user_id:
-                continue
-            user = User.objects.filter(pk=user_id).first()
-            if user and user.role == "competitor":
-                session.delete()
-
-    def _notify_system_status(self, state, schedule_context=None):
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            return
-        payload = build_system_status_payload(state, schedule_context)
-        async_to_sync(channel_layer.group_send)(
-            "system_status",
-            {
-                "type": "system_status_update",
-                "payload": payload,
-            },
-        )
-
 
 class RegistrationCodeListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        if not settings.ENABLE_INVITE_REGISTRATION:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         if not request.user.is_authenticated or request.user.role != "admin":
             return Response(
                 {"detail": "Admin access required."},
@@ -208,6 +191,8 @@ class RegistrationCodeListView(APIView):
         return Response(RegistrationCodeSerializer(codes, many=True).data)
 
     def post(self, request):
+        if not settings.ENABLE_INVITE_REGISTRATION:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         if not request.user.is_authenticated or request.user.role != "admin":
             return Response(
                 {"detail": "Admin access required."},
@@ -228,6 +213,8 @@ class RegistrationCodeDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def delete(self, request, code_id):
+        if not settings.ENABLE_INVITE_REGISTRATION:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         if not request.user.is_authenticated or request.user.role != "admin":
             return Response(
                 {"detail": "Admin access required."},
@@ -246,7 +233,7 @@ class RegistrationCodeDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SystemStatusView(APIView):
+class SystemStatusView(CompetitorSessionMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -265,50 +252,30 @@ class SystemStatusView(APIView):
                 {"detail": "Admin access required."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
         state = SystemState.current()
         previous = state.allow_competitor_access
-        serializer = SystemStatusSerializer(
-            state, data=request.data, partial=True
-        )
+        serializer = SystemStatusSerializer(state, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated = serializer.save()
+
         if "allow_competitor_access" in request.data:
             updated.scheduled_pause_active = False
             updated.save(update_fields=["scheduled_pause_active", "updated_at"])
+
         if previous and not updated.allow_competitor_access:
             self._logout_competitors()
+
         schedule_context = apply_schedule_state(updated)
         if schedule_context.get("paused_now"):
             self._logout_competitors()
+
         payload = build_system_status_payload(updated, schedule_context)
         self._notify_system_status(updated, schedule_context)
         return Response(payload)
 
-    def _logout_competitors(self):
-        for session in Session.objects.all():
-            data = session.get_decoded()
-            user_id = data.get("_auth_user_id")
-            if not user_id:
-                continue
-            user = User.objects.filter(pk=user_id).first()
-            if user and user.role == "competitor":
-                session.delete()
 
-    def _notify_system_status(self, state, schedule_context=None):
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            return
-        payload = build_system_status_payload(state, schedule_context)
-        async_to_sync(channel_layer.group_send)(
-            "system_status",
-            {
-                "type": "system_status_update",
-                "payload": payload,
-            },
-        )
-
-
-class SystemScheduleListView(APIView):
+class SystemScheduleListView(CompetitorSessionMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -322,6 +289,7 @@ class SystemScheduleListView(APIView):
                 {"detail": "Admin access required."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
         serializer = SystemScheduleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         schedule = serializer.save()
@@ -333,28 +301,8 @@ class SystemScheduleListView(APIView):
         self._notify_system_status(state, schedule_context)
         return Response(SystemScheduleSerializer(schedule).data, status=201)
 
-    def _logout_competitors(self):
-        for session in Session.objects.all():
-            data = session.get_decoded()
-            user_id = data.get("_auth_user_id")
-            if not user_id:
-                continue
-            user = User.objects.filter(pk=user_id).first()
-            if user and user.role == "competitor":
-                session.delete()
 
-    def _notify_system_status(self, state, schedule_context=None):
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            return
-        payload = build_system_status_payload(state, schedule_context)
-        async_to_sync(channel_layer.group_send)(
-            "system_status",
-            {"type": "system_status_update", "payload": payload},
-        )
-
-
-class SystemScheduleDetailView(APIView):
+class SystemScheduleDetailView(CompetitorSessionMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
     def patch(self, request, schedule_id):
@@ -369,9 +317,8 @@ class SystemScheduleDetailView(APIView):
                 {"detail": "Schedule not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = SystemScheduleSerializer(
-            schedule, data=request.data, partial=True
-        )
+
+        serializer = SystemScheduleSerializer(schedule, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated = serializer.save()
 
@@ -394,34 +341,14 @@ class SystemScheduleDetailView(APIView):
                 {"detail": "Schedule not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        schedule.delete()
 
+        schedule.delete()
         state = SystemState.current()
         schedule_context = apply_schedule_state(state)
         if schedule_context.get("paused_now"):
             self._logout_competitors()
         self._notify_system_status(state, schedule_context)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def _logout_competitors(self):
-        for session in Session.objects.all():
-            data = session.get_decoded()
-            user_id = data.get("_auth_user_id")
-            if not user_id:
-                continue
-            user = User.objects.filter(pk=user_id).first()
-            if user and user.role == "competitor":
-                session.delete()
-
-    def _notify_system_status(self, state, schedule_context=None):
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            return
-        payload = build_system_status_payload(state, schedule_context)
-        async_to_sync(channel_layer.group_send)(
-            "system_status",
-            {"type": "system_status_update", "payload": payload},
-        )
 
 
 class LogoutView(APIView):
@@ -439,6 +366,8 @@ class MeView(APIView):
         if not request.user or not request.user.is_authenticated:
             return Response({"user": None})
         return Response({"user": UserSerializer(request.user).data})
+
+
 class UserListView(APIView):
     permission_classes = [permissions.AllowAny]
 

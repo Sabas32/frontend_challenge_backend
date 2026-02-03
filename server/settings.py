@@ -217,6 +217,10 @@ CHANNEL_LAYERS = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# Invite-only registration controls.
+ENABLE_INVITE_REGISTRATION = env_bool("ENABLE_INVITE_REGISTRATION", False)
+
+
 if not DEBUG:
     # Render terminates TLS at the proxy. This tells Django to trust the
     # forwarded proto header and treat requests as secure.
