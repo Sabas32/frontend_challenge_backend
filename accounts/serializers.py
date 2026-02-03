@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from django.utils import timezone
 
-from .models import RegistrationCode, SystemSchedule, SystemState
+from .models import SystemSchedule, SystemState
 from .schools import SCHOOL_OPTIONS, normalize_school_name
 
 User = get_user_model()
@@ -32,7 +32,6 @@ class LoginSerializer(serializers.Serializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    invite_code = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
@@ -42,13 +41,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "school",
-            "invite_code",
         )
-
-    def validate_invite_code(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("Invitation code is required.")
-        return value.strip().upper()
 
     def validate_school(self, value):
         normalized = normalize_school_name(value)
@@ -57,7 +50,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return normalized
 
     def create(self, validated_data):
-        validated_data.pop("invite_code", None)
         password = validated_data.pop("password")
         user = User(**validated_data)
         user.role = "competitor"
@@ -115,27 +107,6 @@ class SchoolListSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return {"schools": SCHOOL_OPTIONS}
-
-
-class RegistrationCodeSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(read_only=True)
-    consumed_by_username = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RegistrationCode
-        fields = (
-            "id",
-            "code",
-            "status",
-            "is_active",
-            "expires_at",
-            "created_at",
-            "consumed_at",
-            "consumed_by_username",
-        )
-
-    def get_consumed_by_username(self, obj):
-        return obj.consumed_by.username if obj.consumed_by else None
 
 
 class SystemStatusSerializer(serializers.ModelSerializer):
