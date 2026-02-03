@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils import timezone
 
 from .models import SystemSchedule
@@ -96,6 +97,7 @@ def build_system_status_payload(state, schedule_context=None):
     return {
         "allow_competitor_access": state.allow_competitor_access,
         "scheduled_pause_active": state.scheduled_pause_active,
+        "invite_registration_enabled": bool(settings.ENABLE_INVITE_REGISTRATION),
         "updated_at": serialize_dt(state.updated_at),
         "pause_until": serialize_dt(pause_until),
         "resume_at": serialize_dt(resume_at),
