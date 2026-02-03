@@ -1,9 +1,9 @@
-import secrets
+﻿import secrets
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout, update_session_auth_hash
 from django.contrib.sessions.models import Session
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
@@ -17,8 +17,11 @@ from rest_framework.views import APIView
 from .models import RegistrationCode, SystemSchedule, SystemState
 from .serializers import (
     LoginSerializer,
+    PasswordChangeSerializer,
+    ProfileUpdateSerializer,
     RegistrationCodeSerializer,
     RegisterSerializer,
+    SchoolListSerializer,
     SystemScheduleSerializer,
     SystemStatusSerializer,
     UserSerializer,
@@ -69,6 +72,14 @@ class CsrfView(APIView):
     def get(self, request):
         token = get_token(request)
         return Response({"detail": "CSRF cookie set", "csrfToken": token})
+
+
+class SchoolListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        serializer = SchoolListSerializer(instance={})
+        return Response(serializer.data)
 
 
 class LoginView(CompetitorSessionMixin, APIView):
@@ -366,6 +377,40 @@ class MeView(APIView):
         if not request.user or not request.user.is_authenticated:
             return Response({"user": None})
         return Response({"user": UserSerializer(request.user).data})
+
+    def patch(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"detail": "Not authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = ProfileUpdateSerializer(
+            data=request.data,
+            partial=True,
+            context={"user": request.user},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        for field, value in serializer.validated_data.items():
+            setattr(request.user, field, value)
+        request.user.save()
+
+        return Response({"user": UserSerializer(request.user).data})
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"detail": "Not authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = PasswordChangeSerializer(data=request.data, context={"user": request.user})
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password"])
+        update_session_auth_hash(request, request.user)
+
+        return Response({"detail": "Password updated successfully."})
 
 
 class UserListView(APIView):

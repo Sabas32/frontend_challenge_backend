@@ -1,9 +1,11 @@
-from django.contrib.auth import get_user_model
+﻿from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from django.utils import timezone
 
 from .models import RegistrationCode, SystemSchedule, SystemState
+from .schools import SCHOOL_OPTIONS, normalize_school_name
 
 User = get_user_model()
 
@@ -21,8 +23,6 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "school",
         )
-
-
 
 
 class LoginSerializer(serializers.Serializer):
@@ -50,6 +50,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invitation code is required.")
         return value.strip().upper()
 
+    def validate_school(self, value):
+        normalized = normalize_school_name(value)
+        if not normalized:
+            raise serializers.ValidationError("Please select a school from the provided list.")
+        return normalized
+
     def create(self, validated_data):
         validated_data.pop("invite_code", None)
         password = validated_data.pop("password")
@@ -58,6 +64,57 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class ProfileUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=False, allow_blank=False, max_length=150)
+    last_name = serializers.CharField(required=False, allow_blank=False, max_length=150)
+    username = serializers.CharField(required=False, allow_blank=False, max_length=150)
+    school = serializers.CharField(required=False, allow_blank=False, max_length=120)
+
+    def validate_username(self, value):
+        normalized = value.strip()
+        user = self.context.get("user")
+        exists = User.objects.filter(username__iexact=normalized)
+        if user:
+            exists = exists.exclude(pk=user.pk)
+        if exists.exists():
+            raise serializers.ValidationError("That username is already taken.")
+        return normalized
+
+    def validate_school(self, value):
+        normalized = normalize_school_name(value)
+        if not normalized:
+            raise serializers.ValidationError("Please choose a school from the list.")
+        return normalized
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField()
+    new_password = serializers.CharField(min_length=8)
+    confirm_password = serializers.CharField()
+
+    def validate(self, attrs):
+        user = self.context.get("user")
+        current_password = attrs.get("current_password")
+        new_password = attrs.get("new_password")
+        confirm_password = attrs.get("confirm_password")
+
+        if not user or not user.check_password(current_password):
+            raise serializers.ValidationError({"current_password": "Current password is incorrect."})
+
+        if new_password != confirm_password:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+
+        validate_password(new_password, user=user)
+        return attrs
+
+
+class SchoolListSerializer(serializers.Serializer):
+    schools = serializers.ListField(child=serializers.CharField())
+
+    def to_representation(self, instance):
+        return {"schools": SCHOOL_OPTIONS}
 
 
 class RegistrationCodeSerializer(serializers.ModelSerializer):

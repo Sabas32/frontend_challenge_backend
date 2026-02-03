@@ -98,6 +98,30 @@ class Command(BaseCommand):
                 "last_name": "Achieng",
                 "school": "Guest",
             },
+            {
+                "username": "mukono-star",
+                "password": "mukono123",
+                "role": "competitor",
+                "first_name": "Joel",
+                "last_name": "Muwonge",
+                "school": "Mt. St. Henry's High School Mukono",
+            },
+            {
+                "username": "namilyango-dev",
+                "password": "namilyango123",
+                "role": "competitor",
+                "first_name": "Paul",
+                "last_name": "Semakula",
+                "school": "Namilyango College",
+            },
+            {
+                "username": "namagunga-ui",
+                "password": "namagunga123",
+                "role": "competitor",
+                "first_name": "Doreen",
+                "last_name": "Nansubuga",
+                "school": "Mt. St. Mary's College Namagunga",
+            },
         ]
 
         for payload in users:
