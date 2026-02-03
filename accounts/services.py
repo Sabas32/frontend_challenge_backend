@@ -4,6 +4,12 @@ from .models import SystemSchedule
 from .serializers import SystemScheduleSerializer
 
 
+def serialize_dt(value):
+    if value is None:
+        return None
+    return value.isoformat()
+
+
 def get_schedule_context(now=None):
     if now is None:
         now = timezone.now()
@@ -90,8 +96,8 @@ def build_system_status_payload(state, schedule_context=None):
     return {
         "allow_competitor_access": state.allow_competitor_access,
         "scheduled_pause_active": state.scheduled_pause_active,
-        "updated_at": state.updated_at,
-        "pause_until": pause_until,
-        "resume_at": resume_at,
+        "updated_at": serialize_dt(state.updated_at),
+        "pause_until": serialize_dt(pause_until),
+        "resume_at": serialize_dt(resume_at),
         "schedules": schedules,
     }
