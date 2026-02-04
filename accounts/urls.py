@@ -12,6 +12,7 @@ from .views import (
     SystemScheduleListView,
     SystemStatusView,
     UserListView,
+    UserDetailView,
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path("me/change-password/", ChangePasswordView.as_view(), name="me-change-password"),
     path("system-status/", SystemStatusView.as_view(), name="system-status"),
     path("users/", UserListView.as_view(), name="users"),
+    path("users/<str:user_id>/", UserDetailView.as_view(), name="user-detail"),
     path("system-schedules/", SystemScheduleListView.as_view(), name="system-schedules"),
     path(
         "system-schedules/<int:schedule_id>/",

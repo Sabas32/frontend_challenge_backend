@@ -81,14 +81,23 @@ class LoginView(CompetitorSessionMixin, APIView):
             self._logout_competitors()
             self._notify_system_status(state, schedule_context)
 
-        user = authenticate(
-            request,
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"],
-        )
+        identifier = serializer.validated_data["identifier"].strip()
+        password = serializer.validated_data["password"]
+        candidate = User.objects.filter(username__iexact=identifier).first()
+        if candidate is None:
+            candidate = User.objects.filter(email__iexact=identifier).first()
+
+        user = None
+        if candidate is not None:
+            user = authenticate(
+                request,
+                username=candidate.username,
+                password=password,
+            )
+
         if not user:
             return Response(
-                {"detail": "Invalid username or password."},
+                {"detail": "Invalid username/email or password."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -125,7 +134,7 @@ class RegisterView(CompetitorSessionMixin, APIView):
             user = serializer.save(role="competitor")
         except IntegrityError:
             return Response(
-                {"detail": "Username is already taken."},
+                {"detail": "Username or email is already taken."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -318,3 +327,27 @@ class UserListView(APIView):
             )
         users = User.objects.all().order_by("date_joined")
         return Response(UserSerializer(users, many=True).data)
+
+
+class UserDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request, user_id):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if str(request.user.id) == str(user_id):
+            return Response(
+                {"detail": "You cannot delete your own admin account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target = User.objects.filter(pk=user_id).first()
+        if target is None:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        target.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

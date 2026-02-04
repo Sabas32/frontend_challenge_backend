@@ -26,17 +26,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    identifier = serializers.CharField()
     password = serializers.CharField()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
         fields = (
             "username",
+            "email",
             "password",
             "first_name",
             "last_name",
@@ -48,6 +50,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not normalized:
             raise serializers.ValidationError("Please select a school from the provided list.")
         return normalized
+
+    def validate_email(self, value):
+        email = value.strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("That email is already registered.")
+        return email
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -62,6 +70,7 @@ class ProfileUpdateSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=False, max_length=150)
     last_name = serializers.CharField(required=False, allow_blank=False, max_length=150)
     username = serializers.CharField(required=False, allow_blank=False, max_length=150)
+    email = serializers.EmailField(required=False, allow_blank=False, max_length=254)
     school = serializers.CharField(required=False, allow_blank=False, max_length=120)
 
     def validate_username(self, value):
@@ -72,6 +81,16 @@ class ProfileUpdateSerializer(serializers.Serializer):
             exists = exists.exclude(pk=user.pk)
         if exists.exists():
             raise serializers.ValidationError("That username is already taken.")
+        return normalized
+
+    def validate_email(self, value):
+        normalized = value.strip().lower()
+        user = self.context.get("user")
+        exists = User.objects.filter(email__iexact=normalized)
+        if user:
+            exists = exists.exclude(pk=user.pk)
+        if exists.exists():
+            raise serializers.ValidationError("That email is already taken.")
         return normalized
 
     def validate_school(self, value):
